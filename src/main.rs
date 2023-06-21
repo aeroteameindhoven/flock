@@ -1,6 +1,7 @@
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 
 pub mod window;
+pub mod component;
 
 fn main() -> Result<(), eframe::Error> {
     tracing_subscriber::registry()
@@ -17,6 +18,6 @@ fn main() -> Result<(), eframe::Error> {
             app_id: Some("nl.aeroteameindhoven.Flock".to_string()),
             ..Default::default()
         },
-        Box::new(|ctx| Box::new(window::MainWindow {})),
+        Box::new(|ctx| Box::new(window::MainWindow { heading: 115.0 })),
     )
 }
