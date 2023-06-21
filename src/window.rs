@@ -1,11 +1,10 @@
-use eframe::{
-    egui::{self, Frame, Sense, Slider},
-    epaint::{Color32, Vec2},
-};
+use eframe::egui::{self, Frame, Slider};
 
-use crate::component::heading::HeadingIndicator;
+use crate::component::{attitude::AttitudeIndicator, heading::HeadingIndicator};
 pub struct MainWindow {
     pub heading: f32,
+    pub pitch: f32,
+    pub roll: f32,
 }
 
 impl eframe::App for MainWindow {
@@ -42,18 +41,25 @@ impl eframe::App for MainWindow {
         });
 
         egui::Window::new("Attitude Indicator").show(ctx, |ui| {
-            Frame::canvas(&ctx.style()).show(ui, |ui| {
-                let space = ui.available_size();
-                let (response, painter) =
-                    ui.allocate_painter(Vec2::splat(space.min_elem()), Sense::hover());
-                let bounds = response.rect;
-
-                let size = f32::min(bounds.width(), bounds.height());
-                let radius = size / 2.0;
-
-                painter.circle_filled(bounds.center(), radius, Color32::LIGHT_BLUE);
-
-                // Shape::CubicBezier(CubicBezierShape::from_points_stroke([], closed, fill, stroke))
+            ui.add(
+                Slider::new(&mut self.roll, -360.0..=360.0)
+                    .text("Roll")
+                    .integer()
+                    .step_by(1.0)
+                    .trailing_fill(true),
+            );
+            ui.horizontal(|ui| {
+                ui.add(
+                    Slider::new(&mut self.pitch, -360.0..=360.0)
+                        .text("Pitch")
+                        .integer()
+                        .step_by(1.0)
+                        .trailing_fill(true)
+                        .vertical(),
+                );
+                Frame::canvas(&ctx.style()).show(ui, |ui| {
+                    ui.add(AttitudeIndicator::new(self.pitch, self.roll))
+                });
             });
         });
 
