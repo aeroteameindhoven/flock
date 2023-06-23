@@ -29,20 +29,9 @@ impl Widget for HeadingIndicator {
         let background_color = Hsva::new(0.0, 0.0, 0.02, 1.0);
         let border_color = Hsva::new(0.0, 0.0, 1.0, 1.0);
 
-        let front = {
-            let (y, x) = f32::sin_cos(f32::to_radians(self.heading - 90.0));
-            Vec2::new(x, y)
-        };
-
-        let rear_right = {
-            let (y, x) = f32::sin_cos(f32::to_radians(self.heading + 150.0 - 90.0));
-            Vec2::new(x, y)
-        };
-
-        let rear_left = {
-            let (y, x) = f32::sin_cos(f32::to_radians(self.heading + 210.0 - 90.0));
-            Vec2::new(x, y)
-        };
+        let front = Vec2::angled(f32::to_radians(self.heading - 90.0));
+        let rear_right = Vec2::angled(f32::to_radians(self.heading + 150.0 - 90.0));
+        let rear_left = Vec2::angled(f32::to_radians(self.heading + 210.0 - 90.0));
 
         painter.extend([
             // Circle background
@@ -57,14 +46,14 @@ impl Widget for HeadingIndicator {
 
         // Heading Markers
         painter.extend(degrees.map(|degree| {
-            let (y, x) = f32::sin_cos(f32::to_radians(degree as _));
+            let direction = Vec2::angled(f32::to_radians(degree as _));
             let stroke_width = size / 100.0;
 
             if degree % 90 == 0 {
                 Shape::line_segment(
                     [
-                        bounds.center() + Vec2::new(x, y) * radius,
-                        bounds.center() + Vec2::new(x, y) * radius * 0.8,
+                        bounds.center() + direction * radius,
+                        bounds.center() + direction * radius * 0.8,
                     ],
                     (
                         stroke_width,
@@ -79,8 +68,8 @@ impl Widget for HeadingIndicator {
             } else if degree % 30 == 0 {
                 Shape::line_segment(
                     [
-                        bounds.center() + Vec2::new(x, y) * radius,
-                        bounds.center() + Vec2::new(x, y) * radius * 0.85,
+                        bounds.center() + direction * radius,
+                        bounds.center() + direction * radius * 0.85,
                     ],
                     (
                         stroke_width,
@@ -95,8 +84,8 @@ impl Widget for HeadingIndicator {
             } else {
                 Shape::line_segment(
                     [
-                        bounds.center() + Vec2::new(x, y) * radius,
-                        bounds.center() + Vec2::new(x, y) * radius * 0.9,
+                        bounds.center() + direction * radius,
+                        bounds.center() + direction * radius * 0.9,
                     ],
                     (
                         stroke_width,
