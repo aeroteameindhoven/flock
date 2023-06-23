@@ -1,7 +1,7 @@
 use eframe::{
     egui::{Sense, Widget},
     emath::Align2,
-    epaint::{FontId, HsvaGamma, Shape, Stroke, Vec2},
+    epaint::{FontId, HsvaGamma, Pos2, Shape, Stroke, Vec2},
 };
 
 pub struct AttitudeIndicator {
@@ -66,26 +66,64 @@ impl Widget for AttitudeIndicator {
         let left_angle = (pitch + self.roll).rem_euclid(360.0);
         let right_angle = (self.roll - pitch + 180.0).rem_euclid(360.0);
 
+        let left_point = bounds.center() + Vec2::angled(f32::to_radians(left_angle)) * radius;
+        let right_point = bounds.center() + Vec2::angled(f32::to_radians(right_angle)) * radius;
+        let center_point = Pos2::new(
+            (left_point.x + right_point.x) / 2.0,
+            (left_point.y + right_point.y) / 2.0,
+        );
+
+        let tangent = (left_point - right_point).normalized();
+        let normal = tangent.rot90();
+
         painter.extend([
             // Background
             Shape::circle_filled(bounds.center(), radius, circle_color),
             // Horizon
             Shape::convex_polygon(
-                [left_angle]
+                [left_point, right_point]
                     .into_iter()
-                    .chain(std::iter::successors(Some(right_angle), |angle| {
-                        let angle = (angle - 5.0).rem_euclid(360.0);
+                    .chain(
+                        std::iter::successors(Some(right_angle), |angle| {
+                            let angle = (angle - 5.0).rem_euclid(360.0);
 
-                        if f32::abs(angle - left_angle) <= 5.0 {
-                            None
-                        } else {
-                            Some(angle)
-                        }
-                    }))
-                    .map(|angle| bounds.center() + Vec2::angled(f32::to_radians(angle)) * radius)
+                            if f32::abs(angle - left_angle) <= 5.0 {
+                                None
+                            } else {
+                                Some(angle)
+                            }
+                        })
+                        .skip(1)
+                        .map(|angle| {
+                            bounds.center() + Vec2::angled(f32::to_radians(angle)) * radius
+                        }),
+                    )
                     .collect::<Vec<_>>(),
                 other_color,
                 Stroke::NONE,
+            ),
+            // Horizon degrees markers
+            Shape::Vec(
+                [-20.0, -15.0, -10.0, -5.0, 0.0, 5.0, 10.0, 15.0, 20.0]
+                    .into_iter()
+                    .map(|angle| {
+                        Shape::line_segment(
+                            {
+                                let upwards = normal * radius * f32::sin(f32::to_radians(angle));
+
+                                let half_width = if angle % 10.0 == 0.0 { 0.2 } else { 0.1 };
+
+                                let inwards = tangent * radius * half_width;
+
+                                [
+                                    center_point + upwards - inwards,
+                                    center_point + upwards + inwards,
+                                ]
+                            },
+                            Stroke::new(radius * 0.01, white),
+                        )
+                    })
+                    .collect(),
             ),
             // Red level markers
             Shape::line_segment(
