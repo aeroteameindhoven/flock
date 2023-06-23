@@ -41,6 +41,7 @@ impl eframe::App for MainWindow {
         });
 
         egui::Window::new("Attitude Indicator").show(ctx, |ui| {
+            ui.style_mut().spacing.slider_width = ui.available_size().min_elem() - 60.0;
             ui.add(
                 Slider::new(&mut self.roll, -360.0..=360.0)
                     .text("Roll")

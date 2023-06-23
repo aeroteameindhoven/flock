@@ -210,7 +210,7 @@ impl Widget for HeadingIndicator {
                     fonts,
                     bounds.center(),
                     Align2::CENTER_CENTER,
-                    format!("{:03.0}", self.heading),
+                    format!("{:03.0}°", self.heading),
                     FontId::monospace(bounds.height() * 0.15),
                     Hsva {
                         a: 0.75,
