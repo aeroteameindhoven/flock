@@ -164,7 +164,17 @@ impl Widget for AttitudeIndicator {
                         fonts,
                         bounds.center() - Vec2::X * radius * 0.5,
                         Align2::CENTER_CENTER,
-                        format!("Roll \n{:+04.0}°", self.roll),
+                        format!(
+                            "Roll \n{:03.0}°{}",
+                            f32::abs(self.roll),
+                            if self.roll < 0.0 {
+                                'L'
+                            } else if self.roll > 0.0 {
+                                'R'
+                            } else {
+                                ' '
+                            }
+                        ),
                         FontId::monospace(0.1 * radius),
                         white.into(),
                     ),
