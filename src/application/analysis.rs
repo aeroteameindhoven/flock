@@ -28,6 +28,9 @@ impl Application for Analysis {
         ctx: &egui::Context,
         frame: &mut eframe::Frame,
     ) -> Option<Box<dyn Application>> {
+        // FIXME:
+        frame.request_screenshot();
+
         egui::TopBottomPanel::bottom("timeline").show(ctx, |ui| {
             ui.horizontal_centered(|ui| {
                 ui.button("⏪");

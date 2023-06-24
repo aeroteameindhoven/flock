@@ -25,8 +25,6 @@ impl MainWindow {
 
 impl eframe::App for MainWindow {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        // frame.request_screenshot();
-
         egui::TopBottomPanel::top("menu").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 egui::widgets::global_dark_light_mode_switch(ui);
@@ -35,6 +33,7 @@ impl eframe::App for MainWindow {
                 ui.menu_button("View", |ui| {});
                 ui.menu_button("Tools", |ui| {});
                 ui.menu_button("Help", |ui| {});
+                ui.label(format!("Frame: {}", ctx.frame_nr()));
             })
         });
 
