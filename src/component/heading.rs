@@ -26,6 +26,9 @@ impl Widget for HeadingIndicator {
         let size = f32::min(bounds.width(), bounds.height());
         let radius = size / 2.0;
 
+        let circle_stroke = radius / 150.0;
+        let radius = radius - circle_stroke / 2.0;
+
         let background_color = Hsva::new(0.0, 0.0, 0.02, 1.0);
         let border_color = Hsva::new(0.0, 0.0, 1.0, 1.0);
 
@@ -208,7 +211,7 @@ impl Widget for HeadingIndicator {
                     .into(),
                 )
             }),
-            Shape::circle_stroke(bounds.center(), radius, (radius / 150.0, border_color)),
+            Shape::circle_stroke(bounds.center(), radius, (circle_stroke, border_color)),
         ]);
 
         response
