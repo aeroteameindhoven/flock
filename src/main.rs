@@ -55,9 +55,6 @@ fn recorder(image_receiver: std::sync::mpsc::Receiver<ColorImage>) {
     let duration = video_rs::Time::from_nth_of_a_second(10);
     let mut position = video_rs::Time::zero();
 
-    // FIXME: do not resize, just letterbox
-    let filter = "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1";
-
     let mut command = ffmpeg_sidecar::command::FfmpegCommand::new()
         .hide_banner()
         .create_no_window()
@@ -66,7 +63,7 @@ fn recorder(image_receiver: std::sync::mpsc::Receiver<ColorImage>) {
         .size(800, 600)
         .input("pipe:0")
         .no_audio()
-        .filter(filter)
+        .filter("pad=1920:1080:(ow-iw)/2:(oh-ih)/2")
         .codec_video("libx264rgb")
         .pix_fmt("rgba")
         .overwrite()
