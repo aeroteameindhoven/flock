@@ -899,6 +899,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ffmpeg-sidecar"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4aa2dbe84f307b52b672941b88f3bd39a0b9d49c06dd0fcbdd5c22c6b60de254"
+
+[[package]]
 name = "ffmpeg-sys-next"
 version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -927,7 +933,9 @@ name = "flock"
 version = "0.1.0"
 dependencies = [
  "eframe",
- "ndarray",
+ "ffmpeg-next",
+ "ffmpeg-sidecar",
+ "nix 0.26.2",
  "tracing",
  "tracing-subscriber",
  "video-rs",
