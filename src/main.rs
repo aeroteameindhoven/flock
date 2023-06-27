@@ -12,7 +12,13 @@ pub static SPAWNED_THREADS: RwLock<Vec<thread::JoinHandle<()>>> = RwLock::new(Ve
 fn main() -> Result<(), eframe::Error> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::filter::filter_fn(|meta| {
+            // if *meta.level() == tracing::Level::ERROR {
+            //     println!("{}", std::backtrace::Backtrace::force_capture());
+            //     unreachable!();
+            // }
+
             meta.target().starts_with(env!("CARGO_PKG_NAME"))
+                || (tracing::level_filters::LevelFilter::WARN >= *meta.level())
         }))
         .with(tracing_subscriber::fmt::layer().pretty())
         .init();
