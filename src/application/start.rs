@@ -36,13 +36,7 @@ impl Application for Landing {
                         }))
                     }
                     if columns[1].button("Post Analysis").clicked() {
-                        app = Some(Box::new(Analysis {
-                            heading: 0.0,
-                            pitch: 0.0,
-                            roll: 0.0,
-
-                            timeline_progress: 5.0,
-                        }));
+                        app = Some(Box::new(Analysis::create(ctx, frame)));
                     }
                 })
             });
