@@ -1,11 +1,18 @@
 use std::{io::Write, path::PathBuf};
 
-use eframe::{epaint::ColorImage, wgpu};
+use eframe::{
+    egui,
+    egui_wgpu::{self, renderer::ScreenDescriptor},
+    epaint::{ColorImage, Pos2, Rect, Vec2},
+    wgpu::{self, TextureViewDescriptor},
+};
 use nix::unistd::Pid;
 use pollster::FutureExt;
 use video_rs::Encoder;
 
 pub fn renderer() {
+    let (width, height) = (1920, 1080);
+
     let gpu = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::PRIMARY,
         dx12_shader_compiler: wgpu::Dx12Compiler::default(),
@@ -23,7 +30,7 @@ pub fn renderer() {
     let (device, queue) = adapter
         .request_device(
             &wgpu::DeviceDescriptor {
-                label: Some("flock wgpu overlay renderer"),
+                label: Some("flock overlay renderer"),
                 features: wgpu::Features::default(),
                 limits: wgpu::Limits::default(),
             },
@@ -32,11 +39,112 @@ pub fn renderer() {
         .block_on()
         .unwrap();
 
-    let renderer = eframe::egui_wgpu::renderer::Renderer::new(
+    let texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("flock overlay render target"),
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 0,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba8Unorm,
+        usage: wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[wgpu::TextureFormat::Rgba8UnormSrgb],
+    });
+    let texture_view = texture.create_view(&TextureViewDescriptor {
+        label: Some("flock overlay render view"),
+        ..Default::default()
+    });
+
+    let output_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("flock overlay render output buffer"),
+        size: ((std::mem::size_of::<u32>() as u32) * width * height) as wgpu::BufferAddress,
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: true,
+    });
+
+    let mut renderer =
+        egui_wgpu::renderer::Renderer::new(&device, wgpu::TextureFormat::Rgba8Unorm, None, 0);
+    let mut command_encoder =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+    let context = egui::Context::default();
+    let mut textures_delta = context.tex_manager().write().take_delta();
+
+    let screen_descriptor = ScreenDescriptor {
+        size_in_pixels: [width, height],
+        pixels_per_point: 1.0,
+    };
+
+    let output = context.run(
+        egui::RawInput {
+            screen_rect: Some(Rect::from_min_size(
+                Pos2::new(0.0, 0.0),
+                Vec2::new(
+                    screen_descriptor.size_in_pixels[0] as _,
+                    screen_descriptor.size_in_pixels[1] as _,
+                ) * screen_descriptor.pixels_per_point,
+            )),
+            ..Default::default()
+        },
+        |ctx| {
+            egui::TopBottomPanel::top("eepee").show(ctx, |ui| {
+                ui.label("test");
+            });
+
+            // egui::CentralPanel::default().show(ctx, |ui| {
+            //     ui.label("AA");
+            // });
+        },
+    );
+    let clipped_primitives = context.tessellate(output.shapes);
+    textures_delta.append(context.tex_manager().write().take_delta());
+
+    let command_buffers = renderer.update_buffers(
         &device,
-        wgpu::TextureFormat::Rgba8Unorm,
-        None,
-        0,
+        &queue,
+        &mut command_encoder,
+        &clipped_primitives,
+        &screen_descriptor,
+    );
+
+    queue.submit(command_buffers);
+    let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        label: None,
+        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+            view: &texture_view,
+            resolve_target: None,
+            ops: wgpu::Operations {
+                load: wgpu::LoadOp::Clear(wgpu::Color {
+                    r: 0.1,
+                    g: 0.2,
+                    b: 0.3,
+                    a: 1.0,
+                }),
+                store: true,
+            },
+        })],
+        depth_stencil_attachment: None,
+    });
+    renderer.render(&mut render_pass, &clipped_primitives, &screen_descriptor);
+    command_encoder.copy_texture_to_buffer(
+        wgpu::ImageCopyTexture {
+            aspect: wgpu::TextureAspect::All,
+            texture: &texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+        },
+        wgpu::ImageCopyBuffer {
+            buffer: &output_buffer,
+            layout: wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: u32_size * texture_size,
+                rows_per_image: texture_size,
+            },
+        },
+        texture_desc.size,
     );
 
     // TODO: render,
