@@ -10,10 +10,10 @@ publish = false
 opt-level = 2
 
 [dependencies]
-eframe = "0.22.0"
-ffmpeg-next = "6.0.0"
-ffmpeg-sidecar = "0.4.1"
-nix = { version = "0.26.2", default-features = false, features = ["signal", "process"] }
-tracing = "0.1.37"
+eframe             = { version = "0.22.0", features = ["wayland", "wgpu"] }
+ffmpeg-next        = "6.0.0"
+ffmpeg-sidecar     = "0.4.1"
+nix                = { version = "0.26.2", default-features = false, features = ["process", "signal"] }
+tracing            = "0.1.37"
 tracing-subscriber = { version = "0.3.17" }
-video-rs = { version = "0.4.0", features = ["ndarray"] }
+video-rs           = { version = "0.4.0", features = ["ndarray"] }

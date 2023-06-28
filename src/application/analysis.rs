@@ -158,13 +158,13 @@ impl Application for Analysis {
                 Some(self.renderbuffer),
             );
 
-            let status = unsafe { gl.check_framebuffer_status(glow::FRAMEBUFFER) };
+            let status = gl.check_framebuffer_status(glow::FRAMEBUFFER);
 
             if status != glow::FRAMEBUFFER_COMPLETE {
                 panic!("Framebuffer is not complete");
             }
 
-            egui_glow::painter::clear(self.painter.gl(), [1920, 1080], [0.0, 0.0, 1.0, 1.0]);
+            egui_glow::painter::clear(gl, [1920, 1080], [0.0, 0.0, 1.0, 1.0]);
         }
         self.painter.paint_and_update_textures(
             [1920, 1080],
@@ -172,7 +172,6 @@ impl Application for Analysis {
             &clipped_primitives,
             &textures_delta,
         );
-        check_for_gl_error!(self.painter.gl(), "e");
         unsafe {
             let gl = self.painter.gl();
             gl.finish();

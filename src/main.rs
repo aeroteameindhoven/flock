@@ -1,5 +1,6 @@
 use std::{sync::RwLock, thread};
 
+use eframe::Renderer;
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 
 pub mod application;
@@ -30,6 +31,7 @@ fn main() -> Result<(), eframe::Error> {
         eframe::NativeOptions {
             // icon_data: (),
             app_id: Some("nl.aeroteameindhoven.Flock".to_string()),
+            renderer: Renderer::Wgpu,
             ..Default::default()
         },
         Box::new(|_ctx| Box::new(window::MainWindow::new())),
