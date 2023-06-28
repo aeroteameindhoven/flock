@@ -1055,6 +1055,7 @@ dependencies = [
  "ffmpeg-next",
  "ffmpeg-sidecar",
  "nix 0.26.2",
+ "pollster",
  "tracing",
  "tracing-subscriber",
  "video-rs",

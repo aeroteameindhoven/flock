@@ -1,10 +1,48 @@
 use std::{io::Write, path::PathBuf};
 
-use eframe::epaint::ColorImage;
+use eframe::{epaint::ColorImage, wgpu};
 use nix::unistd::Pid;
+use pollster::FutureExt;
 use video_rs::Encoder;
 
-pub fn recorder(image_receiver: std::sync::mpsc::Receiver<ColorImage>) {
+pub fn renderer() {
+    let gpu = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::PRIMARY,
+        dx12_shader_compiler: wgpu::Dx12Compiler::default(),
+    });
+
+    let adapter = gpu
+        .request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            compatible_surface: None,
+            force_fallback_adapter: false,
+        })
+        .block_on()
+        .unwrap();
+
+    let (device, queue) = adapter
+        .request_device(
+            &wgpu::DeviceDescriptor {
+                label: Some("flock wgpu overlay renderer"),
+                features: wgpu::Features::default(),
+                limits: wgpu::Limits::default(),
+            },
+            None,
+        )
+        .block_on()
+        .unwrap();
+
+    let renderer = eframe::egui_wgpu::renderer::Renderer::new(
+        &device,
+        wgpu::TextureFormat::Rgba8Unorm,
+        None,
+        0,
+    );
+
+    // TODO: render,
+}
+
+pub fn encoder(image_receiver: std::sync::mpsc::Receiver<ColorImage>) {
     ffmpeg_sidecar::download::auto_download().expect("ffmpeg should install");
 
     let filename = "./video.mkv";

@@ -5,7 +5,7 @@ use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::Subs
 
 pub mod application;
 pub mod component;
-pub mod recorder;
+pub mod recording;
 pub mod window;
 
 pub static SPAWNED_THREADS: RwLock<Vec<thread::JoinHandle<()>>> = RwLock::new(Vec::new());

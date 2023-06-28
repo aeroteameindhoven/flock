@@ -31,7 +31,7 @@ impl Analysis {
     pub fn create(ctx: &egui::Context, frame: &mut eframe::Frame) -> Self {
         let (image_sender, image_receiver) = std::sync::mpsc::channel();
 
-        let encoder_thread = std::thread::spawn(move || crate::recorder::recorder(image_receiver));
+        let encoder_thread = std::thread::spawn(move || crate::recording::encoder(image_receiver));
 
         crate::SPAWNED_THREADS.write().unwrap().push(encoder_thread);
 
