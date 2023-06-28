@@ -26,6 +26,8 @@ fn main() -> Result<(), eframe::Error> {
 
     video_rs::init().expect("video_rs should initialize");
 
+    thread::spawn(|| recording::renderer());
+
     eframe::run_native(
         "Aero Flock",
         eframe::NativeOptions {

@@ -39,13 +39,14 @@ pub fn renderer() {
         .block_on()
         .unwrap();
 
+    let texture_size = wgpu::Extent3d {
+        width,
+        height,
+        depth_or_array_layers: 1,
+    };
     let texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("flock overlay render target"),
-        size: wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 0,
-        },
+        size: texture_size,
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
@@ -66,12 +67,13 @@ pub fn renderer() {
     });
 
     let mut renderer =
-        egui_wgpu::renderer::Renderer::new(&device, wgpu::TextureFormat::Rgba8Unorm, None, 0);
+        egui_wgpu::renderer::Renderer::new(&device, wgpu::TextureFormat::Rgba8Unorm, None, 1);
     let mut command_encoder =
         device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
     let context = egui::Context::default();
     let mut textures_delta = context.tex_manager().write().take_delta();
+    dbg!(&textures_delta);
 
     let screen_descriptor = ScreenDescriptor {
         size_in_pixels: [width, height],
@@ -87,6 +89,7 @@ pub fn renderer() {
                     screen_descriptor.size_in_pixels[1] as _,
                 ) * screen_descriptor.pixels_per_point,
             )),
+
             ..Default::default()
         },
         |ctx| {
@@ -101,6 +104,7 @@ pub fn renderer() {
     );
     let clipped_primitives = context.tessellate(output.shapes);
     textures_delta.append(context.tex_manager().write().take_delta());
+    dbg!(&textures_delta);
 
     let command_buffers = renderer.update_buffers(
         &device,
@@ -110,25 +114,34 @@ pub fn renderer() {
         &screen_descriptor,
     );
 
-    queue.submit(command_buffers);
-    let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-        label: None,
-        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-            view: &texture_view,
-            resolve_target: None,
-            ops: wgpu::Operations {
-                load: wgpu::LoadOp::Clear(wgpu::Color {
-                    r: 0.1,
-                    g: 0.2,
-                    b: 0.3,
-                    a: 1.0,
-                }),
-                store: true,
-            },
-        })],
-        depth_stencil_attachment: None,
-    });
-    renderer.render(&mut render_pass, &clipped_primitives, &screen_descriptor);
+    {
+        let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: None,
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &texture_view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                        r: 0.1,
+                        g: 0.2,
+                        b: 0.3,
+                        a: 1.0,
+                    }),
+                    store: true,
+                },
+            })],
+            depth_stencil_attachment: None,
+        });
+
+        for (texture_id, delta) in textures_delta.set {
+            dbg!(delta.image.size());
+            renderer.update_texture(&device, &queue, texture_id, &delta);
+        }
+        renderer.render(&mut render_pass, &clipped_primitives, &screen_descriptor);
+    }
+    for texture_id in textures_delta.free {
+        renderer.free_texture(&texture_id);
+    }
     command_encoder.copy_texture_to_buffer(
         wgpu::ImageCopyTexture {
             aspect: wgpu::TextureAspect::All,
@@ -140,11 +153,17 @@ pub fn renderer() {
             buffer: &output_buffer,
             layout: wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: u32_size * texture_size,
-                rows_per_image: texture_size,
+                bytes_per_row: Some(std::mem::size_of::<u32>() as u32 * width),
+                rows_per_image: None,
             },
         },
-        texture_desc.size,
+        texture_size,
+    );
+
+    queue.submit(
+        command_buffers
+            .into_iter()
+            .chain(std::iter::once(command_encoder.finish())),
     );
 
     // TODO: render,
