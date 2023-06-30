@@ -1,16 +1,13 @@
 use std::borrow::Cow;
 
 use eframe::{
-    egui::{self, RawInput, Slider, TextureOptions},
+    egui::{self, RawInput, Slider},
     egui_glow::{self, check_for_gl_error},
-    epaint::{Color32, ColorImage, ImageDelta, Pos2, Rect, Vec2},
+    epaint::{ColorImage, Pos2, Rect, Vec2},
     glow::{self, HasContext},
 };
 
-use crate::{
-    component::{attitude::AttitudeIndicator, heading::HeadingIndicator},
-    window,
-};
+use crate::component::{attitude::AttitudeIndicator, heading::HeadingIndicator};
 
 use super::Application;
 
@@ -145,6 +142,7 @@ impl Application for Analysis {
         );
         let clipped_primitives = offscreen_context.tessellate(offscreen_output.shapes);
         textures_delta.append(offscreen_context.tex_manager().write().take_delta());
+        dbg!(&textures_delta);
 
         unsafe {
             let gl = self.painter.gl();

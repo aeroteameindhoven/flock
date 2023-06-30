@@ -26,14 +26,14 @@ fn main() -> Result<(), eframe::Error> {
 
     video_rs::init().expect("video_rs should initialize");
 
-    thread::spawn(|| recording::renderer());
+    thread::spawn(recording::renderer);
 
     eframe::run_native(
         "Aero Flock",
         eframe::NativeOptions {
             // icon_data: (),
             app_id: Some("nl.aeroteameindhoven.Flock".to_string()),
-            renderer: Renderer::Wgpu,
+            renderer: Renderer::Glow,
             ..Default::default()
         },
         Box::new(|_ctx| Box::new(window::MainWindow::new())),
