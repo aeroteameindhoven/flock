@@ -1,6 +1,9 @@
 use std::borrow::Cow;
 
-use eframe::{egui::CentralPanel, epaint::Vec2};
+use eframe::{
+    egui::{CentralPanel, RichText},
+    epaint::{FontId, Vec2},
+};
 
 use super::{analysis::Analysis, live::Live, Application};
 
@@ -29,17 +32,17 @@ impl Application for Landing {
             ui.vertical_centered_justified(|ui| {
                 ui.columns(2, |columns| {
                     if columns[0].button("Live View").clicked() {
-                        app = Some(Box::new(Live {
-                            heading: 0.0,
-                            pitch: 0.0,
-                            roll: 0.0,
-                        }))
+                        app = Some(Box::new(Live::new()))
                     }
                     if columns[1].button("Post Analysis").clicked() {
-                        app = Some(Box::new(Analysis::create(ctx, frame)));
+                        app = Some(Box::new(Analysis::create()));
                     }
                 })
             });
+
+            ui.vertical_centered(|ui| {
+                ui.heading(RichText::new("😺☺😎").font(FontId::proportional(100.0)));
+            })
         });
 
         app

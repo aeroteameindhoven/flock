@@ -10,7 +10,7 @@ pub struct HeadingIndicator {
 
 impl HeadingIndicator {
     pub fn new(heading: f32) -> Self {
-        let heading = f32::abs(heading.rem_euclid(360.0));
+        let heading = heading.rem_euclid(360.0).abs();
 
         HeadingIndicator { heading }
     }
@@ -180,23 +180,21 @@ impl Widget for HeadingIndicator {
                 (size / 100.0, Hsva::new(0.0, 0.9, 0.5, 1.0)),
             ),
             // Heading text box
-            Shape::Rect(RectShape {
-                rect: Rect::from_center_size(bounds.center(), Vec2::new(size * 0.40, size * 0.25)),
-                rounding: Rounding::same(size * 0.05),
-                fill: Hsva {
+            Shape::Rect(RectShape::new(
+                Rect::from_center_size(bounds.center(), Vec2::new(size * 0.40, size * 0.25)),
+                Rounding::same(size * 0.05),
+                Hsva {
                     a: 0.75,
                     ..background_color
-                }
-                .into(),
-                stroke: (
+                },
+                (
                     0.5,
                     Hsva {
                         a: 0.75,
                         ..border_color
                     },
-                )
-                    .into(),
-            }),
+                ),
+            )),
             painter.fonts(|fonts| {
                 Shape::text(
                     fonts,

@@ -10,11 +10,7 @@ publish = false
 opt-level = 2
 
 [dependencies]
-eframe             = { version = "0.22.0", features = ["wayland", "wgpu"] }
-ffmpeg-next        = "6.0.0"
-ffmpeg-sidecar     = "0.4.1"
-nix                = { version = "0.26.2", default-features = false, features = ["process", "signal"] }
-pollster = "0.3.0"
+eframe             = { version = "0.25.0", features = ["wayland", "wgpu"] }
+pollster           = "0.3.0"
 tracing            = "0.1.37"
 tracing-subscriber = { version = "0.3.17" }
-video-rs           = { version = "0.4.0", features = ["ndarray"] }

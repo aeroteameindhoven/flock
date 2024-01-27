@@ -15,10 +15,6 @@ impl MainWindow {
 }
 
 impl eframe::App for MainWindow {
-    fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
-        [1.0, 0.0, 0.0, 1.0]
-    }
-
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("menu").show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -33,7 +29,9 @@ impl eframe::App for MainWindow {
         });
 
         if let Some(application) = self.application.update(ctx, frame) {
-            frame.set_window_title(application.title().as_ref());
+            ctx.send_viewport_cmd(egui::ViewportCommand::Title(
+                application.title().into_owned(),
+            ));
             self.application = application;
         }
     }

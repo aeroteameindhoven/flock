@@ -22,8 +22,10 @@ impl AttitudeIndicator {
 impl Widget for AttitudeIndicator {
     fn ui(self, ui: &mut eframe::egui::Ui) -> eframe::egui::Response {
         let space = ui.available_size();
-        let (response, painter) =
-            ui.allocate_painter(Vec2::splat(space.min_elem()), Sense::hover());
+        let (response, painter) = ui.allocate_painter(
+            Vec2::splat(space.min_elem()),
+            Sense::focusable_noninteractive(),
+        );
         let bounds = response.rect;
 
         let size = f32::min(bounds.width(), bounds.height());
