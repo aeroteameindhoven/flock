@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use eframe::egui::{self, Frame, Slider, Ui, ViewportBuilder, ViewportId, WidgetText};
 
-use crate::component::{attitude::AttitudeIndicator, heading::HeadingIndicator};
+use crate::component::{attitude::{AttitudeIndicator, AttitudeIndicatorRectangular}, heading::HeadingIndicator};
 
 use super::Application;
 
@@ -12,6 +12,7 @@ pub struct Live {
     pub roll: f32,
 
     attitude_display: DisplayState,
+    attitude_display_rectangular: DisplayState,
     heading_display: DisplayState,
 }
 
@@ -23,6 +24,7 @@ impl Live {
             roll: 0.0,
 
             attitude_display: DisplayState::Viewport,
+            attitude_display_rectangular: DisplayState::Viewport,
             heading_display: DisplayState::Viewport,
         }
     }
@@ -88,6 +90,17 @@ impl Application for Live {
             |ui| {
                 Frame::canvas(&ctx.style()).show(ui, |ui| {
                     ui.add(AttitudeIndicator::new(self.pitch, self.roll));
+                });
+            },
+        );
+
+        window(
+            ctx,
+            &mut self.attitude_display_rectangular,
+            "Attitude Indicator Rectangular",
+            |ui| {
+                Frame::canvas(&ctx.style()).show(ui, |ui| {
+                    ui.add(AttitudeIndicatorRectangular::new(self.pitch, self.roll));
                 });
             },
         );

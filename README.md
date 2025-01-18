@@ -1,3 +1,3 @@
 # Aero Flock
 
-![screenshot of application](./2023-06-23.png)
+![screenshot of application](.github/images/eframe_design.png)
