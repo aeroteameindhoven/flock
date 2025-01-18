@@ -65,8 +65,8 @@ impl Widget for AttitudeIndicator {
             (self.pitch + 180.0, GROUND, SKY)
         };
 
-        let left_angle = (pitch + self.roll).rem_euclid(360.0);
-        let right_angle = (self.roll - pitch + 180.0).rem_euclid(360.0);
+        let left_angle = (pitch + -self.roll).rem_euclid(360.0);
+        let right_angle = (-self.roll - pitch + 180.0).rem_euclid(360.0);
 
         let left_point = bounds.center() + Vec2::angled(f32::to_radians(left_angle)) * radius;
         let right_point = bounds.center() + Vec2::angled(f32::to_radians(right_angle)) * radius;
@@ -224,9 +224,9 @@ impl Widget for AttitudeIndicator {
 
             // Roll Indicator
             painter.add({
-                let top = Vec2::angled(f32::to_radians(self.roll - 90.0));
-                let bottom_left = Vec2::angled(f32::to_radians(self.roll - 95.0));
-                let bottom_right = Vec2::angled(f32::to_radians(self.roll - 85.0));
+                let top = Vec2::angled(f32::to_radians(-self.roll - 90.0));
+                let bottom_left = Vec2::angled(f32::to_radians(-self.roll - 95.0));
+                let bottom_right = Vec2::angled(f32::to_radians(-self.roll - 85.0));
 
                 Shape::convex_polygon(
                     vec![
