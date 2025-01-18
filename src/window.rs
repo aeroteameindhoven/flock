@@ -1,6 +1,9 @@
-use std::sync::Arc;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
-use eframe::egui::{self, mutex::Mutex, Frame};
+use eframe::egui::{self, mutex::Mutex, Color32, Frame, RichText};
 
 use crate::component::{
     attitude::{AttitudeIndicator, AttitudeIndicatorRectangular},
@@ -9,6 +12,7 @@ use crate::component::{
 
 pub struct MainWindow {
     attitude: Arc<Mutex<Attitude>>,
+    connection: Arc<AtomicBool>,
 }
 
 #[derive(Debug, Default, Clone, Copy, serde::Deserialize)]
@@ -19,8 +23,11 @@ pub struct Attitude {
 }
 
 impl MainWindow {
-    pub fn new(attitude: Arc<Mutex<Attitude>>) -> Self {
-        Self { attitude }
+    pub fn new(attitude: Arc<Mutex<Attitude>>, connection: Arc<AtomicBool>) -> Self {
+        Self {
+            attitude,
+            connection,
+        }
     }
 }
 
@@ -39,9 +46,18 @@ impl eframe::App for MainWindow {
 
         // FIXME: Am i holding this lock for too long?
         // TODO: how to push updates?
-        let mut attitude = self.attitude.lock();
+        let attitude = self.attitude.lock();
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Websocket status: ");
+                ui.label(if self.connection.load(Ordering::Acquire) {
+                    RichText::new("connected").color(Color32::GREEN)
+                } else {
+                    RichText::new("disconnected").color(Color32::RED)
+                });
+            });
+
             // ui.add(
             //     Slider::new(&mut attitude.heading, -360.0..=720.0)
             //         .text("Heading")

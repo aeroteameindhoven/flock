@@ -1,4 +1,11 @@
-use std::{net::TcpListener, sync::Arc, thread};
+use std::{
+    net::TcpListener,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    thread,
+};
 
 use eframe::egui::mutex::Mutex;
 use tracing::{debug, trace, warn};
@@ -32,32 +39,44 @@ fn main() -> Result<(), eframe::Error> {
             ..Default::default()
         },
         Box::new(|ctx| {
-            let attitude = Arc::new(Mutex::new(Attitude::default()));
+            let attitude = Arc::new(Mutex::new(Attitude {
+                heading: 200.0,
+                pitch: 10.0,
+                roll: 10.0,
+            }));
+            let connection = Arc::new(AtomicBool::new(false));
 
             thread::spawn({
                 let attitude = attitude.clone();
+                let connection = connection.clone();
                 let request_repaint = {
                     let ctx = ctx.egui_ctx.clone();
 
                     move || ctx.request_repaint()
                 };
 
-                || websocket_thread(attitude, request_repaint)
+                || websocket_thread(attitude, connection, request_repaint)
             });
 
-            Ok(Box::new(window::MainWindow::new(attitude)))
+            Ok(Box::new(window::MainWindow::new(attitude, connection)))
         }),
     )?;
 
     Ok(())
 }
 
-fn websocket_thread(attitude_mutex: Arc<Mutex<Attitude>>, request_repaint: impl Fn()) {
+fn websocket_thread(
+    attitude_mutex: Arc<Mutex<Attitude>>,
+    connection: Arc<AtomicBool>,
+    request_repaint: impl Fn(),
+) {
     let server = TcpListener::bind("0.0.0.0:8080").unwrap();
     for stream in server.incoming() {
         trace!("new TCP connection");
         let mut websocket = tungstenite::accept(stream.unwrap()).unwrap();
         trace!("TCP upgraded to websocket connection");
+        connection.store(true, Ordering::Release);
+        request_repaint();
 
         loop {
             match websocket.read() {
@@ -93,6 +112,9 @@ fn websocket_thread(attitude_mutex: Arc<Mutex<Attitude>>, request_repaint: impl 
                 }
             }
         }
+
+        connection.store(false, Ordering::Release);
+        request_repaint();
 
         trace!("websocket connection closed");
     }
