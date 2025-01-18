@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Gyro Test</title>
+        <script>
+            let websocket = new WebSocket("wss://lenovo-fedora.taila5e2a.ts.net:8069");
+            websocket.addEventListener("error", (error) => {
+                document.getElementById("log").write("Websocket error")
+            });
+            websocket.onclose = () => document.getElementById("log").write("close")
+            websocket.onopen = () => document.getElementById("log").write("open")
+            websocket.onmessage = () => document.getElementById("log").write("message")
+
+            window.addEventListener("deviceorientation", (event) => {
+                const { alpha: heading, beta: pitch, gamma: roll } = event;
+
+                document.getElementById("heading").innerText = heading;
+                document.getElementById("pitch").innerText = pitch;
+                document.getElementById("roll").innerText = roll;
+
+                if (websocket.readyState === WebSocket.OPEN) {
+                    websocket.send(JSON.stringify({ heading, pitch, roll }))
+                }
+            });
+
+            window.addEventListener("DOMContentLoaded", () => {
+                // Apple smells
+                if (typeof (DeviceOrientationEvent.requestPermission) == "function") {
+                    const button = /** @type {HTMLButtonElement} */ (document.getElementById("request_permissions"));
+                    button.style.display = "inherit";
+                }
+            })
+
+            function request_permission() {
+                DeviceOrientationEvent.requestPermission().then(() => {
+                    document.getElementById("permission_state").innerText = "granted";
+                });
+                document.getElementById("permission_state").innerText = "requested";
+            }
+        </script>
+    </head>
+    <body>
+        <button id="request_permissions" onclick="request_permission()" style="display: none;">Request
+            permission</button>
+        Hello. <span id="permission_state"></span>
+        <hr>
+        <p>Heading <span id="heading"></span></p>
+        <p>Pitch <span id="pitch"></span></p>
+        <p>Roll <span id="roll"></span></p>
+        <pre id="log"></pre>
+    </body>
+</html>

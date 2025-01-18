@@ -1,6 +1,11 @@
-use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
+use std::{net::TcpListener, sync::Arc, thread};
 
-pub mod application;
+use eframe::egui::mutex::Mutex;
+use tracing::{trace, warn};
+use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
+use tungstenite::Message;
+use window::Attitude;
+
 pub mod component;
 pub mod window;
 
@@ -26,8 +31,56 @@ fn main() -> Result<(), eframe::Error> {
                 .with_app_id("nl.aeroteameindhoven.Flock"),
             ..Default::default()
         },
-        Box::new(|_ctx| Box::new(window::MainWindow::new())),
+        Box::new(|ctx| {
+            let attitude = Arc::new(Mutex::new(Attitude::default()));
+
+            thread::spawn({
+                let attitude = attitude.clone();
+                let request_repaint = {
+                    let ctx = ctx.egui_ctx.clone();
+
+                    move || ctx.request_repaint()
+                };
+
+                || websocket_thread(attitude, request_repaint)
+            });
+
+            Ok(Box::new(window::MainWindow::new(attitude)))
+        }),
     )?;
 
     Ok(())
+}
+
+fn websocket_thread(attitude_mutex: Arc<Mutex<Attitude>>, request_repaint: impl Fn()) {
+    let server = TcpListener::bind("0.0.0.0:8080").unwrap();
+    for stream in server.incoming() {
+        trace!("new TCP connection");
+        let mut websocket = tungstenite::accept(stream.unwrap()).unwrap();
+        trace!("TCP upgraded to websocket connection");
+
+        loop {
+            let msg = websocket.read().unwrap();
+
+            if msg.is_close() {
+                break;
+            }
+
+            trace!(?msg, "websocket message");
+
+            if msg.is_binary() {
+                warn!("invalid message type: binary");
+                break;
+            }
+
+            if let Message::Text(msg) = msg {
+                let attitude: Attitude = serde_json::from_str(msg.as_str()).unwrap();
+
+                *attitude_mutex.lock() = attitude;
+                request_repaint();
+            }
+        }
+
+        trace!("websocket connection closed");
+    }
 }
