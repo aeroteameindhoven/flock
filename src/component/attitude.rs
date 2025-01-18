@@ -1,5 +1,5 @@
 use eframe::{
-    egui::{Rect, Rounding, Sense, Widget},
+    egui::{Rounding, Sense, Widget},
     emath::Align2,
     epaint::{FontId, HsvaGamma, Pos2, Shape, Stroke, Vec2},
 };
@@ -282,7 +282,7 @@ impl Widget for AttitudeIndicatorRectangular {
         let left_point = match left_angle {
             0.0..=45.0 | 315.0..=365.0 => {
                 bounds.left_center()
-                    + Vec2::new(0.0, f32::to_radians(left_angle).tan() * size/2.0)
+                    + Vec2::new(0.0, f32::to_radians(left_angle).tan() * size / 2.0)
             }
             45.0..=135.0 => {
                 bounds.center_bottom()
@@ -290,7 +290,7 @@ impl Widget for AttitudeIndicatorRectangular {
             }
             135.0..=225.0 => {
                 bounds.right_center()
-                    - Vec2::new(0.0, f32::to_radians(left_angle).tan() * size/2.0)
+                    - Vec2::new(0.0, f32::to_radians(left_angle).tan() * size / 2.0)
             }
             225.0..=315.0 => {
                 bounds.center_top()

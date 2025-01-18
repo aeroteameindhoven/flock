@@ -5,44 +5,81 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Gyro Test</title>
         <script>
-            let websocket = new WebSocket("wss://lenovo-fedora.taila5e2a.ts.net:8069");
-            websocket.addEventListener("error", (error) => {
-                document.getElementById("log").write("Websocket error")
-            });
-            websocket.onclose = () => document.getElementById("log").write("close")
-            websocket.onopen = () => document.getElementById("log").write("open")
-            websocket.onmessage = () => document.getElementById("log").write("message")
-
-            window.addEventListener("deviceorientation", (event) => {
-                const { alpha: heading, beta: pitch, gamma: roll } = event;
-
-                document.getElementById("heading").innerText = heading;
-                document.getElementById("pitch").innerText = pitch;
-                document.getElementById("roll").innerText = roll;
-
-                if (websocket.readyState === WebSocket.OPEN) {
-                    websocket.send(JSON.stringify({ heading, pitch, roll }))
-                }
-            });
-
             window.addEventListener("DOMContentLoaded", () => {
+                const log_elem = document.getElementById("log");
+                /** @type {WakeLockSentinel?} */
+                let wake_lock = null;
+
+                let websocket = new WebSocket("wss://lenovo-fedora.taila5e2a.ts.net:8069");
+                websocket.addEventListener("error", (error) => {
+                    if (wake_lock !== null) {
+                        wake_lock.release();
+                    }
+                    log_elem.innerText += "Websocket error\n";
+                });
+                websocket.addEventListener("close", () => {
+                    if (wake_lock !== null) {
+                        wake_lock.release();
+                    }
+                    log_elem.innerText += "close\n";
+                });
+                websocket.addEventListener("open", () => log_elem.innerText += "open\n");
+                websocket.addEventListener("message", () => log_elem.innerText += "message\n");
+
+
+                window.addEventListener("deviceorientation", (event) => {
+                    const { alpha: heading, beta: pitch, gamma: roll } = event;
+
+                    document.getElementById("heading").innerText = heading;
+                    document.getElementById("pitch").innerText = pitch;
+                    document.getElementById("roll").innerText = roll;
+
+                    if (websocket.readyState === WebSocket.OPEN) {
+                        websocket.send(JSON.stringify({ heading, pitch, roll }))
+                    }
+                });
+
+                const button = /** @type {HTMLButtonElement} */ (document.getElementById("request_permissions"));
+
+                button.addEventListener("click", () => {
+                    DeviceOrientationEvent.requestPermission().then(() => {
+                        log_elem.innerText += "orientation permissions granted\n";
+                    }).catch(() => {
+                        log_elem.innerText += "orientation permissions denied\n";
+                    });
+                    log_elem.innerText += "orientation permissions requested\n";
+
+                    navigator.wakeLock.request().then((sentinel) => {
+                        log_elem.innerText += "wake lock active\n";
+                        wake_lock = sentinel;
+
+                        wake_lock.addEventListener("release", () => {
+                            log_elem.innerText += "wake lock released\n";
+                        })
+                    }).catch(() => {
+                        log_elem.innerText += "wake lock denied\n";
+                    });
+                    log_elem.innerText += "wake lock requested\n";
+
+                });
+
                 // Apple smells
                 if (typeof (DeviceOrientationEvent.requestPermission) == "function") {
-                    const button = /** @type {HTMLButtonElement} */ (document.getElementById("request_permissions"));
+                    log_elem.innerText += "orientation permissions request required\n";
+
                     button.style.display = "inherit";
                 }
-            })
 
-            function request_permission() {
-                DeviceOrientationEvent.requestPermission().then(() => {
-                    document.getElementById("permission_state").innerText = "granted";
-                });
-                document.getElementById("permission_state").innerText = "requested";
-            }
+                if ("wakeLock" in navigator) {
+                    log_elem.innerText += "wake lock supported\n";
+                } else {
+                    log_elem.innerText += "wake lock NOT supported\n";
+                }
+            });
         </script>
     </head>
     <body>
-        <button id="request_permissions" onclick="request_permission()" style="display: none;">Request
+        <button id="request_permissions" style="display: none;">Request
             permission</button>
         Hello. <span id="permission_state"></span>
         <hr>

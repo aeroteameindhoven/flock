@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use eframe::egui::{self, mutex::Mutex, Frame, Slider, Vec2};
+use eframe::egui::{self, mutex::Mutex, Frame};
 
 use crate::component::{
     attitude::{AttitudeIndicator, AttitudeIndicatorRectangular},
@@ -64,24 +64,20 @@ impl eframe::App for MainWindow {
             //         .trailing_fill(true),
             // );
 
-            let height = ui.available_height();
+            ui.columns_const(|[one, two, three]| {
+                Frame::canvas(&ctx.style()).show(one, |ui| {
+                    ui.add(AttitudeIndicator::new(attitude.pitch, attitude.roll));
+                });
 
-            Frame::canvas(&ctx.style()).show(ui, |ui| {
-                ui.add_sized(
-                    Vec2::splat(height / 3.0),
-                    AttitudeIndicator::new(attitude.pitch, attitude.roll),
-                );
-            });
+                Frame::canvas(&ctx.style()).show(two, |ui| {
+                    ui.add(AttitudeIndicatorRectangular::new(
+                        attitude.pitch,
+                        attitude.roll,
+                    ));
+                });
 
-            Frame::canvas(&ctx.style()).show(ui, |ui| {
-                ui.add_sized(
-                    Vec2::splat(height / 3.0),
-                    AttitudeIndicatorRectangular::new(attitude.pitch, attitude.roll),
-                );
-            });
-
-            Frame::canvas(&ctx.style()).show(ui, |ui| {
-                ui.add_sized(Vec2::splat(height / 3.0), HeadingIndicator::new(attitude.heading))
+                Frame::canvas(&ctx.style())
+                    .show(three, |ui| ui.add(HeadingIndicator::new(attitude.heading)));
             });
         });
     }

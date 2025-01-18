@@ -1,7 +1,7 @@
 use std::{net::TcpListener, sync::Arc, thread};
 
 use eframe::egui::mutex::Mutex;
-use tracing::{trace, warn};
+use tracing::{debug, trace, warn};
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 use tungstenite::Message;
 use window::Attitude;
@@ -60,24 +60,37 @@ fn websocket_thread(attitude_mutex: Arc<Mutex<Attitude>>, request_repaint: impl 
         trace!("TCP upgraded to websocket connection");
 
         loop {
-            let msg = websocket.read().unwrap();
+            match websocket.read() {
+                Ok(Message::Close(_)) => {
+                    break;
+                }
+                Ok(Message::Binary(_)) => {
+                    warn!("invalid message type: binary");
+                    break;
+                }
+                Ok(Message::Text(text)) => {
+                    let attitude: Attitude = serde_json::from_str(text.as_str()).unwrap();
 
-            if msg.is_close() {
-                break;
-            }
+                    // trace!(?attitude, "websocket message");
 
-            trace!(?msg, "websocket message");
+                    *attitude_mutex.lock() = attitude;
+                    request_repaint();
+                }
+                Ok(_) => {}
+                Err(tungstenite::Error::ConnectionClosed) => {
+                    break;
+                }
+                Err(tungstenite::Error::Protocol(
+                    tungstenite::error::ProtocolError::ResetWithoutClosingHandshake,
+                )) => {
+                    debug!("reset without closing handshake. Likely iOS tab unfocused");
 
-            if msg.is_binary() {
-                warn!("invalid message type: binary");
-                break;
-            }
-
-            if let Message::Text(msg) = msg {
-                let attitude: Attitude = serde_json::from_str(msg.as_str()).unwrap();
-
-                *attitude_mutex.lock() = attitude;
-                request_repaint();
+                    break;
+                }
+                Err(error) => {
+                    warn!(%error, "error in websocket connection");
+                    break;
+                }
             }
         }
 
